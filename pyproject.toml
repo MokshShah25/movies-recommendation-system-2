@@ -1,0 +1,20 @@
+[project]
+name = "mrs"
+version = "0.1.0"
+description = "Content-based movie recommendation system using Sentence Transformers and FAISS"
+readme = "README.md"
+
+requires-python = ">=3.12"
+dependencies = [
+    "faiss-cpu>=1.15.0",
+    "numpy>=2.5.3",
+    "sentence-transformers>=6.0.1",
+    "streamlit>=1.63.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = false
