@@ -116,9 +116,14 @@ def load_vector_store():
 def load_transformer_model():
     return SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-@st.cache_data(show_spinner="⏳ Indexing 187,000+ movie catalog...")
+@st.cache_data(show_spinner="⏳ Indexing movie catalog...")
 def load_movies_catalog():
-    df = pd.read_parquet("movie_recommender_files/movies.parquet")
+    # Strictly load only the columns used in the UI to save ~80MB+ of RAM
+    columns_to_load = [
+        "id", "title", "release_date", "vote_average", 
+        "vote_count", "genres", "poster_path", "overview"
+    ]
+    df = pd.read_parquet("movie_recommender_files/movies.parquet", columns=columns_to_load)
     df["title"] = df["title"].fillna("Unknown Title")
     
     # Extract release year
@@ -134,7 +139,7 @@ def load_movies_catalog():
     # Dictionary lookup for fast index resolution
     id_to_index = {int(mid): idx for idx, mid in enumerate(df["id"])}
     
-    # Extract unique genres
+    # Extract unique genres safely
     all_genres = set()
     for g in df["genres"].dropna():
         for item in g.split(","):
