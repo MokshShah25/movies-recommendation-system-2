@@ -1,58 +1,115 @@
-# 🎬 CineMatch AI — Movie Recommendation System
+<div align="center">
 
-An intelligent, high-performance Movie Recommendation System powered by **FAISS vector indexing**, **Sentence Transformers (MiniLM)**, and **TMDB metadata** spanning over **187,000+ movies**. Built with an interactive, cinematic dark-mode **Streamlit** user interface.
+# 🎬 CineMatch AI — Intelligent Movie Recommender
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://movies-recommendation-system-2.streamlit.app/)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![FAISS](https://img.shields.io/badge/Vector_Search-FAISS-00599C?style=flat&logo=meta&logoColor=white)](https://github.com/facebookresearch/faiss)
+[![Sentence-Transformers](https://img.shields.io/badge/Embeddings-all--MiniLM--L6--v2-FFD21E?style=flat&logo=huggingface&logoColor=black)](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
+[![uv](https://img.shields.io/badge/Packaged_with-uv-DE5FE9?style=flat&logo=astral&logoColor=white)](https://github.com/astral-sh/uv)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
+**A lightning-fast, production-ready Movie Recommendation System indexing 187,000+ films using FAISS vector indexing, dense Sentence-Transformers (MiniLM) embeddings, and a cinematic dark-mode Streamlit interface.**
+
+[🌐 Explore Live App](https://movies-recommendation-system-2.streamlit.app/) • [🚀 Quickstart](#-getting-started) • [🧠 Architecture](#-system-architecture) • [✨ Features](#-key-features)
+
+---
+
+</div>
+
+## 🌐 Live Web Application
+
+The application is deployed and hosted live on **Streamlit Cloud**:
+
+👉 **[https://movies-recommendation-system-2.streamlit.app/](https://movies-recommendation-system-2.streamlit.app/)**
+
+> Try out **"Plot & Vibe Search"** by describing any storyline or mood in natural language, or use **"More Like This"** to instantly explore nearest-neighbor recommendations for your favorite films!
 
 ---
 
 ## 🌟 Key Features
 
-- **🎯 Dual Recommendation Engines**:
-  - **Movie-to-Movie Vector Similarity ("More Like This")**: Select or search any film from the 187k+ catalog or use one-click quick picks (*Interstellar*, *Inception*, *The Dark Knight*, *Fight Club*, etc.) to discover nearest neighbor recommendations in 384-dimensional embedding space.
-  - **Natural Language Semantic Search ("Plot & Vibe Search")**: Type free-form plot descriptions, moods, or themes (e.g., *"rainy neo-noir cyberpunk detective in futuristic city"* or *"mind-bending dream heist"*). The app encodes your query in real-time with `all-MiniLM-L6-v2` and queries FAISS instantaneously.
-- **🖼️ Rich Movie Cards & Live TMDB Posters**:
-  - Fetches real-time posters directly from TMDB's CDN (`https://image.tmdb.org/t/p/w500`).
-  - Built-in zero-dependency SVG fallback placeholders for missing posters.
-  - Interactive expanders for full movie synopses and direct TMDB page links.
-- **🎛️ Interactive Filters & Controls**:
-  - Dynamic slider for number of recommendations ($4$ to $20$).
-  - Minimum rating threshold filter (⭐ $0.0$ - $9.0+$).
-  - Multi-select genre filtering (Action, Sci-Fi, Thriller, Animation, Drama, etc.).
-- **⚡ High Performance & Low Memory**:
-  - Uses a compressed **31 MB Parquet** dataset with PyArrow for sub-millisecond metadata lookups.
-  - Employs **memory-mapped NumPy embeddings** (`mmap_mode="r"`) to minimize RAM consumption.
-  - Vector similarity search via **FAISS** (`IndexFlatIP`).
+- **🎯 Dual Recommendation Modes**:
+  - **1. Item-to-Item Similarity ("More Like This")**: Pick or search any title across the 187,000+ film catalog (or click quick picks like *Interstellar*, *Inception*, or *The Dark Knight*) to find the closest cosine-similarity neighbors in 384-dimensional embedding space.
+  - **2. Natural Language Semantic Search ("Plot & Vibe Search")**: Type free-form themes, plot concepts, or moods (e.g., *"a lonely astronaut surviving on Mars"* or *"dark cyberpunk neo-noir detective in rainy metropolis"*). Queries are embedded in real time via `all-MiniLM-L6-v2` and searched against FAISS in milliseconds.
+- **⚡ Engineered for Low Memory & Ultra-Low Latency**:
+  - **Sub-Millisecond Vector Retrieval**: Powered by Meta's **FAISS** (`IndexFlatIP` on $L_2$-normalized vectors).
+  - **Memory-Mapped Embeddings**: Precomputed embeddings (`.npy`) loaded with `mmap_mode="r"` to keep RAM footprints well within free cloud tier limitations.
+  - **High-Performance Parquet Storage**: Fast columnar reads via **PyArrow** and **Pandas** for metadata lookups across 187k+ rows.
+- **🎛️ Dynamic Multi-Factor Filtering**:
+  - Customize recommendation counts ($4$ to $20$ cards).
+  - Minimum rating filter (⭐ $0.0$ to $9.0+$).
+  - Multi-select genre filtering (Sci-Fi, Thriller, Action, Drama, Animation, and more).
+- **🖼️ Rich Cinematic UI**:
+  - Real-time TMDB CDN posters (`https://image.tmdb.org/t/p/w500`).
+  - Graceful fallback SVG posters when covers are unavailable.
+  - Interactive synopsis expanders and direct TMDB movie profile links.
+  - Custom dark glassmorphic styling tailored for a sleek cinematic feel.
+
+---
+
+## 🧠 System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Data_Pipeline["1. Offline Data & Embedding Pipeline"]
+        A[187,000+ TMDB Movies Dataset] --> B[Metadata Preprocessing & Feature Engineering]
+        B --> C[Sentence-Transformers all-MiniLM-L6-v2]
+        C --> D[384-d Dense L2-Normalized Vectors]
+        D --> E[FAISS Index IndexFlatIP]
+        B --> F[movies.parquet & metadata cache]
+    end
+
+    subgraph Inference_Engine["2. Real-Time Inference & Search Engine"]
+        User(["👤 User Request"])
+        User -->|Select Title| Q1["Item Similarity Lookup"]
+        User -->|Natural Language Prompt| Q2["Real-time Query Embedding"]
+        Q1 --> Search["FAISS Vector Search"]
+        Q2 --> Search
+        E --> Search
+        Search --> RawTopK["Top-K Candidate IDs"]
+    end
+
+    subgraph App_Layer["3. Post-Filtering & UI Presentation"]
+        RawTopK --> Filter["Filter Engine (Min Rating, Genre, Exclude Self)"]
+        F --> Filter
+        Filter --> UI["Streamlit Cinematic Cards"]
+        UI -->|Fetch Cover Art| TMDB["TMDB Image CDN / Fallback SVG"]
+        UI --> WebApp["Live Streamlit App"]
+    end
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Component | Technology |
+| Layer | Technologies |
 |---|---|
-| **Frontend / Web UI** | [Streamlit](https://streamlit.io/) |
-| **Vector Search Engine** | [FAISS](https://github.com/facebookresearch/faiss) (`faiss-cpu`) |
-| **NLP Embeddings** | [Sentence Transformers](https://www.sbert.net/) (`all-MiniLM-L6-v2`, 384 dimensions) |
-| **Data Engine & Formats** | [Pandas](https://pandas.pydata.org/), [PyArrow](https://arrow.apache.org/docs/python/) (Parquet), [NumPy](https://numpy.org/) |
-| **Package Management** | [uv](https://github.com/astral-sh/uv) |
-| **Python Version** | Python `>= 3.12` |
+| **Frontend UI** | [Streamlit](https://streamlit.io/) (Custom CSS Dark Theme, Responsive Cards) |
+| **Vector Search Engine** | [FAISS](https://github.com/facebookresearch/faiss) (`faiss-cpu`, Inner Product Index) |
+| **Embedding Model** | [Sentence-Transformers](https://www.sbert.net/) (`all-MiniLM-L6-v2`, 384 dimensions) |
+| **Data Processing** | [Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/), [PyArrow](https://arrow.apache.org/docs/python/) (Parquet) |
+| **Package & Dependency Manager** | [uv](https://github.com/astral-sh/uv) / pip |
+| **Runtime & Hosting** | Python `>=3.12` • [Streamlit Cloud](https://streamlit.io/cloud) |
 
 ---
 
 ## 📁 Project Structure
 
-```
-MRS/
-├── app.py                          # Main Streamlit web application
-├── pyproject.toml                  # Project metadata and dependencies
-├── uv.lock                         # Locked dependency versions
-├── README.md                       # Documentation
-├── movie_recommender_files/        # Data artifacts
-│   ├── movies.parquet              # Cleaned TMDB catalog (187,501 movies)
-│   ├── movies.faiss                # FAISS vector similarity index
-│   ├── movie_embeddings.npy        # 384-d precomputed dense embeddings
-│   └── movies_meta.pkl             # Bidirectional index & title mappings
-└── src/
-    └── mrs/
-        └── __init__.py
+```text
+movies-recommendation-system-2/
+├── app.py                          # Streamlit application logic and UI interface
+├── pyproject.toml                  # Project configuration and dependency specifications
+├── uv.lock                         # Deterministic lockfile for uv package manager
+├── requirements.txt                # Pip requirements for cloud deployment
+├── README.md                       # Project documentation
+├── movie_recommender_files/        # Precomputed data artifacts
+│   ├── movies.parquet              # Compressed columnar metadata (187,501 films)
+│   ├── movies.faiss                # Serialized FAISS vector index
+│   ├── movie_embeddings.npy        # 384-dimensional dense embeddings
+│   └── movies_meta.pkl             # Bidirectional lookup dictionaries
+└── .streamlit/
+    └── config.toml                 # Streamlit theme and server configurations
 ```
 
 ---
@@ -60,71 +117,94 @@ MRS/
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-Ensure you have **Python 3.12+** and [uv](https://docs.astral.sh/uv/) installed:
-```powershell
-# Install uv (if not already installed)
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+Ensure you have **Python 3.12+** installed on your machine.
+
+### 2. Clone the Repository
+```bash
+git clone https://github.com/MokshShah25/movies-recommendation-system-2.git
+cd movies-recommendation-system-2
 ```
 
-### 2. Installation
-Clone the repository and install dependencies using `uv`:
-```powershell
-git clone <your-repository-url>
-cd MRS
+### 3. Setup Virtual Environment & Dependencies
+
+#### Option A: Using `uv` (Recommended — Fastest)
+```bash
+# Install uv if you haven't already:
+# Windows (PowerShell):
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# macOS/Linux:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Sync dependencies:
 uv sync
 ```
 
-*(Alternatively, with standard pip: `pip install -r pyproject.toml` or `pip install streamlit faiss-cpu sentence-transformers pandas pyarrow numpy`)*
+#### Option B: Using Standard `pip` & `venv`
+```bash
+python -m venv .venv
 
-### 3. Running the Application
-Launch the Streamlit dashboard:
-```powershell
-uv run streamlit run app.py
+# Windows:
+.venv\Scripts\activate
+# macOS / Linux:
+source .venv/bin/activate
+
+pip install -r requirements.txt
 ```
 
-Once started, open your web browser at:
+### 4. Run the Streamlit App Locally
+```bash
+# If using uv:
+uv run streamlit run app.py
+
+# If using standard venv:
+streamlit run app.py
+```
+
+Open your browser and navigate to:
 👉 **[http://localhost:8501](http://localhost:8501)**
 
 ---
 
-## 💡 How to Use
+## 💡 Usage Examples
 
-### 1. "More Like This" (Movie Similarity)
-1. Pick a popular movie from the **Quick Picks** buttons or search for any movie in the dropdown.
-2. The **Hero Spotlight** will display the chosen movie's poster, release year, rating, genres, and synopsis.
-3. Browse the recommended movies below, each showing match similarity score (`🎯 % Match`), star ratings, genres, and an expandable synopsis.
+### 1. "More Like This"
+1. Choose from pre-configured **Quick Picks** (*Interstellar, Inception, The Dark Knight, Fight Club, Spirited Away, Pulp Fiction*) or type any title into the movie selector.
+2. The **Hero Spotlight** will feature the selected movie's rating, genres, release year, and overview.
+3. Review recommended titles, match percentages, genre chips, and expanders for synopses.
 
-### 2. "Plot & Vibe Search" (Semantic NLP)
+### 2. "Plot & Vibe Search"
 1. Switch to the **🔮 Plot & Vibe Search** tab.
-2. Click any of the prompt inspiration presets or type your own custom scenario into the text box (e.g., *"solitary astronaut stranded on an alien planet"*).
-3. Click **🚀 Search Semantic Vectors** to retrieve semantically matching movies.
-
-### 3. Adjusting Filters
-Use the **Sidebar** to:
-- Adjust recommendation count ($4$ to $20$).
-- Filter out movies below a certain rating (e.g., ⭐ $7.0+$).
-- Filter recommendations by one or more genres.
+2. Click one of the inspiration buttons or type your own storyline:
+   - *"A solitary astronaut stranded on Mars trying to survive"*
+   - *"A gritty cyberpunk detective hunting rogue androids in a rainy city"*
+   - *"Time travel paradox where characters receive letters from the future"*
+3. Click **🚀 Search Semantic Vectors** to retrieve semantically aligned recommendations.
 
 ---
 
-## 🔑 API Keys & Configuration (Optional)
+## ⚙️ Configuration & Secrets (Optional)
 
-> [!NOTE]
-> **No API key is required** to run the app! Movie posters load directly via TMDB's public CDN, and embeddings/vector searches execute completely on your local machine.
+The application works out of the box with zero required API keys. Posters are served directly via TMDB's public image CDN.
 
-If you wish to configure optional credentials (such as a TMDB API Key for live trailers or a Hugging Face token):
-1. Create a `.streamlit/secrets.toml` file:
+If you wish to extend the application with live TMDB API endpoints (such as fetching video trailers):
+1. Create a file at `.streamlit/secrets.toml`:
    ```toml
-   TMDB_API_KEY = "your_tmdb_api_key_here"
-   HF_TOKEN = "your_huggingface_token_here"
+   TMDB_API_KEY = "your_tmdb_api_key"
    ```
-2. Access them within Streamlit:
-   ```python
-   import streamlit as st
-   tmdb_key = st.secrets.get("TMDB_API_KEY", "")
-   ```
+2. Streamlit will automatically load secrets securely.
 
 ---
 
-## 👤 Author
+## 👤 Author & Acknowledgments
+
 - **Moksh Shah**
+  - GitHub: [@MokshShah25](https://github.com/MokshShah25)
+  - Live Demo: [movies-recommendation-system-2.streamlit.app](https://movies-recommendation-system-2.streamlit.app/)
+
+Special thanks to **The Movie Database (TMDB)** for metadata and poster assets, and the **Hugging Face** & **Meta AI Research** communities for `sentence-transformers` and `faiss`.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ using Python, FAISS, Sentence Transformers, and Streamlit.</sub>
+</div>
