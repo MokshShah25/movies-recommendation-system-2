@@ -106,11 +106,10 @@ st.markdown("""
 # -----------------------------------------------------------------------------
 # RESOURCE & DATA CACHING
 # -----------------------------------------------------------------------------
-@st.cache_resource(show_spinner="⏳ Loading FAISS index & precomputed vector embeddings...")
+@st.cache_resource(show_spinner="⏳ Loading FAISS index...")
 def load_vector_store():
     index = faiss.read_index("movie_recommender_files/movies.faiss")
-    embeddings = np.load("movie_recommender_files/movie_embeddings.npy", mmap_mode="r")
-    return index, embeddings
+    return index
 
 @st.cache_resource(show_spinner="⏳ Loading Sentence Transformer NLP Model (all-MiniLM-L6-v2)...")
 def load_transformer_model():
@@ -150,7 +149,7 @@ def load_movies_catalog():
     return df, id_to_index, sorted(list(all_genres))
 
 # Initialize Data & Models
-index, embeddings = load_vector_store()
+index = load_vector_store()
 model = load_transformer_model()
 df, id_to_index, available_genres = load_movies_catalog()
 
@@ -186,7 +185,7 @@ def search_similar_by_movie(
     selected_genres: list = None
 ):
     """Searches FAISS using the target movie's precomputed vector."""
-    query_vec = embeddings[target_idx].reshape(1, -1)
+    query_vec = index.reconstruct(int(target_idx)).reshape(1, -1)
     k_fetch = min(len(df), max(50, k * 6))
     scores, indices = index.search(query_vec, k_fetch)
     
